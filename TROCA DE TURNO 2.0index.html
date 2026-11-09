@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troca de Turno - Almoxarifado SP25</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --shopee-orange: #EE4D2D;
+            --shopee-navy: #113366;
+            --bg-color: #f4f4f4;
+            --card-bg: #ffffff;
+            --border-color: #dddddd;
+            --text-main: #333333;
+        }
+
+        * { box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            background-color: var(--shopee-navy);
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            text-align: center;
+            border-bottom: 5px solid var(--shopee-orange);
+        }
+
+        header h1 { margin: 0; font-size: 24px; text-transform: uppercase; }
+        header p { margin: 5px 0 0 0; color: #e2e8f0; }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .card-title {
+            color: var(--shopee-orange);
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .form-grid.two-cols { grid-template-columns: 1fr 1fr; }
+            .form-grid.three-cols { grid-template-columns: 1fr 1fr 1fr; }
+        }
+
+        .form-group { display: flex; flex-direction: column; }
+        
+        label { font-weight: 500; margin-bottom: 5px; font-size: 14px; color: #555; }
+        
+        input[type="text"], input[type="number"], input[type="date"], input[type="time"], select, textarea {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--shopee-orange);
+            box-shadow: 0 0 0 2px rgba(238, 77, 45, 0.1);
+        }
+
+        textarea { resize: vertical; min-height: 60px; }
+
+        /* Tabela Críticos / Triagem */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid var(--border-color); padding: 10px; text-align: center; }
+        th { background-color: #f8f9fa; color: var(--shopee-navy); font-size: 13px; }
+        td input { width: 100%; text-align: center; border: none; background: transparent; padding: 5px; font-weight: bold; }
+        td input:focus { background-color: #fff3e0; outline: none; }
+
+        .btn-generate {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn-generate:hover { background-color: #218838; }
+
+        /* Modal Output */
+        #outputModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; width: 90%; max-width: 600px; border-radius: 10px; padding: 20px;
+            max-height: 90vh; display: flex; flex-direction: column;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-header h2 { margin: 0; color: var(--shopee-navy); font-size: 20px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+        
+        #finalText {
+            width: 100%; height: 350px; padding: 15px; font-family: monospace; font-size: 14px;
+            border: 1px solid #ccc; border-radius: 5px; background: #f8f9fa; resize: none; white-space: pre-wrap;
+        }
+
+        .btn-copy {
+            background-color: var(--shopee-orange); color: white; border: none; padding: 12px;
+            font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 15px;
+        }
+        .btn-copy:hover { background-color: #d73a1c; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Formulário de Troca de Turno</h1>
+        <p>Almoxarifado SOC-SP25</p>
+    </header>
+
+    <div class="card" style="border-radius: 0;">
+        <div class="form-grid three-cols">
+            <div class="form-group">
+                <label>Data</label>
+                <input type="date" id="dataAtual">
+            </div>
+            <div class="form-group">
+                <label>Turno Operacional</label>
+                <select id="turno">
+                    <option value="T1">T1</option>
+                    <option value="T2">T2</option>
+                    <option value="T3">T3</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Almoxarife Responsável</label>
+                <input type="text" id="almoxarife" placeholder="Nome do Almoxarife">
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">📦 1. Recebimento</h2>
+        <div class="form-grid three-cols">
+            <div class="form-group">
+                <label>NFs Recebidas (Números)</label>
+                <textarea id="rec_nfs" placeholder="Ex: 12345, 67890"></textarea>
+            </div>
+            <div class="form-group">
+                <label>IDs dos Itens (SKUs)</label>
+                <textarea id="rec_ids" placeholder="Ex: ID00218, RE00003"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Quantidades Recebidas</label>
+                <textarea id="rec_qtds" placeholder="Ex: 500 un, 200 un"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">📋 2. Inventário</h2>
+        <div class="form-grid three-cols">
+            <div class="form-group"><label>Diário (Qtd Contada)</label><input type="number" id="inv_diario"></div>
+            <div class="form-group"><label>Semanal (Qtd Contada)</label><input type="number" id="inv_semanal"></div>
+            <div class="form-group"><label>Mensal (Qtd Contada)</label><input type="number" id="inv_mensal"></div>
+            <div class="form-group"><label>Qtd Itens c/ Divergência</label><input type="number" id="inv_div_qtd"></div>
+            <div class="form-group"><label>Pendentes 2ª Contagem</label><input type="number" id="inv_pend_2"></div>
+            <div class="form-group"><label>Pendentes 3ª Contagem</label><input type="number" id="inv_pend_3"></div>
+        </div>
+        <div class="form-group" style="margin-top: 15px;">
+            <label>IDs Divergentes e Quantidade (-1 ou +1)</label>
+            <textarea id="inv_detalhes" placeholder="Ex: ID00118 (-2), RE00001 (+1)"></textarea>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">🚨 3. Contagem Diária de Itens Críticos (Físico)</h2>
+        <div class="form-group" style="margin-bottom: 10px; max-width: 200px;">
+            <label>Horário da Contagem:</label>
+            <input type="time" id="crit_hora">
+        </div>
+        <table>
+            <tr>
+                <th>ID00218<br>(Scuttle Nova)</th>
+                <th>RE00002<br>(Scuttle Reuso)</th>
+                <th>ID00219<br>(Pallet Novo)</th>
+                <th>RE00001<br>(Pallet Reuso)</th>
+            </tr>
+            <tr>
+                <td><input type="number" id="crit_sn"></td>
+                <td><input type="number" id="crit_sr"></td>
+                <td><input type="number" id="crit_pn"></td>
+                <td><input type="number" id="crit_pr"></td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th>RE00003<br>(Saca Reuso)</th>
+                <th>ID00118<br>(Luva 7/P)</th>
+                <th>ID00243<br>(Luva 8/M)</th>
+            </tr>
+            <tr>
+                <td><input type="number" id="crit_sac"></td>
+                <td><input type="number" id="crit_l7"></td>
+                <td><input type="number" id="crit_l8"></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">♻️ 4. Triagem (Movimentação do Turno)</h2>
+        <table>
+            <tr>
+                <th>Status</th>
+                <th>Scuttles</th>
+                <th>Pallets</th>
+                <th>Sacas</th>
+            </tr>
+            <tr>
+                <td><strong>Recebido para Triar</strong></td>
+                <td><input type="number" id="tri_rec_scut"></td>
+                <td><input type="number" id="tri_rec_pal"></td>
+                <td><input type="number" id="tri_rec_sac"></td>
+            </tr>
+            <tr>
+                <td><strong>Triado no Turno</strong></td>
+                <td><input type="number" id="tri_feito_scut"></td>
+                <td><input type="number" id="tri_feito_pal"></td>
+                <td><input type="number" id="tri_feito_sac"></td>
+            </tr>
+            <tr>
+                <td><strong>Pendente p/ Próximo Turno</strong></td>
+                <td><input type="number" id="tri_pend_scut"></td>
+                <td><input type="number" id="tri_pend_pal"></td>
+                <td><input type="number" id="tri_pend_sac"></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">📝 5. Requisições e Transferências</h2>
+        <div class="form-grid two-cols">
+            <div class="form-group">
+                <label>Pendentes de Atender (Saída/Transf.)</label>
+                <textarea id="req_atender" placeholder="Ex: Jira #123 (Transferência SP8), Ticket #456 (Saída EPI)"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Pendentes de Receber (Entre SOCs)</label>
+                <textarea id="req_receber" placeholder="Ex: Aguardando NF de SP6 (Scuttles)"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">🧹 6. Organização e Limpeza (5S)</h2>
+        <div class="form-grid two-cols">
+            <div class="form-group">
+                <label>Área Administrativa (Como foi entregue?)</label>
+                <select id="org_admin_status" style="margin-bottom: 5px;">
+                    <option value="Limpa e Organizada">Limpa e Organizada</option>
+                    <option value="Com ressalvas">Com ressalvas</option>
+                </select>
+                <input type="text" id="org_admin_obs" placeholder="Observações (opcional)">
+            </div>
+            <div class="form-group">
+                <label>Área de Triagem (Limpeza e Organização)</label>
+                <select id="org_triagem_status" style="margin-bottom: 5px;">
+                    <option value="Limpa, sem lixo e organizada">Limpa, sem lixo e organizada</option>
+                    <option value="Desorganizada / Com lixo">Desorganizada / Com lixo</option>
+                </select>
+                <input type="text" id="org_triagem_obs" placeholder="Observações (opcional)">
+            </div>
+        </div>
+        <div class="form-grid two-cols" style="margin-top: 15px;">
+            <div class="form-group">
+                <label>Estoque DENTRO do Almox (Quantidades)</label>
+                <textarea id="org_estoque_almox" placeholder="Especifique as quantidades dos insumos principais"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Estoque FUNDO do Galpão (Quantidades)</label>
+                <textarea id="org_estoque_fundo" placeholder="Especifique as quantidades dos insumos no fundo"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn-generate" onclick="gerarRelatorio()">Gerar Relatório para SeaTalk</button>
+</div>
+
+<!-- Modal com o Resultado -->
+<div id="outputModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Pré-visualização (SeaTalk)</h2>
+            <button class="close-btn" onclick="fecharModal()">&times;</button>
+        </div>
+        <textarea id="finalText" readonly></textarea>
+        <button class="btn-copy" onclick="copiarTexto()">📋 Copiar para o SeaTalk</button>
+    </div>
+</div>
+
+<script>
+    // Setar data de hoje ao carregar
+    document.getElementById('dataAtual').valueAsDate = new Date();
+
+    function getVal(id) {
+        let val = document.getElementById(id).value.trim();
+        return val === "" ? "0" : val;
+    }
+
+    function getText(id) {
+        let val = document.getElementById(id).value.trim();
+        return val === "" ? "Nenhum/Zerado" : val;
+    }
+
+    function gerarRelatorio() {
+        let data = document.getElementById('dataAtual').value;
+        if(data) {
+            const partes = data.split('-');
+            data = `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+        let turno = document.getElementById('turno').value;
+        let almox = document.getElementById('almoxarife').value || "Não informado";
+
+        let relatorio = `🔄 *TROCA DE TURNO - ALMOXARIFADO SP25* 🔄\n📅 Data: ${data} | ⏰ Turno: ${turno}\n👤 Almoxarife: ${almox}\n\n`;
+
+        relatorio += `📦 *1. RECEBIMENTO*\n`;
+        relatorio += `- NFs: ${getText('rec_nfs')}\n`;
+        relatorio += `- IDs: ${getText('rec_ids')}\n`;
+        relatorio += `- Quantidades: ${getText('rec_qtds')}\n\n`;
+
+        relatorio += `📋 *2. INVENTÁRIO*\n`;
+        relatorio += `- Contagem: Diário (${getVal('inv_diario')}) | Semanal (${getVal('inv_semanal')}) | Mensal (${getVal('inv_mensal')})\n`;
+        relatorio += `- Itens c/ Divergência: ${getVal('inv_div_qtd')}\n`;
+        relatorio += `- Pendentes 2ª Contagem: ${getVal('inv_pend_2')}\n`;
+        relatorio += `- Pendentes 3ª Contagem: ${getVal('inv_pend_3')}\n`;
+        relatorio += `- Detalhes/IDs Divergentes: ${getText('inv_detalhes')}\n\n`;
+
+        relatorio += `🚨 *3. ITENS CRÍTICOS (Físico às ${document.getElementById('crit_hora').value || "Não inf."})\n`;
+        relatorio += `- ID00218 (Scut. Nova): ${getVal('crit_sn')}\n`;
+        relatorio += `- RE00002 (Scut. Reuso): ${getVal('crit_sr')}\n`;
+        relatorio += `- ID00219 (Pallet Novo): ${getVal('crit_pn')}\n`;
+        relatorio += `- RE00001 (Pallet Reuso): ${getVal('crit_pr')}\n`;
+        relatorio += `- RE00003 (Saca Reuso): ${getVal('crit_sac')}\n`;
+        relatorio += `- ID00118 (Luva 7/P): ${getVal('crit_l7')}\n`;
+        relatorio += `- ID00243 (Luva 8/M): ${getVal('crit_l8')}\n\n`;
+
+        relatorio += `♻️ *4. TRIAGEM (Movimentação)*\n`;
+        relatorio += `> *Recebido:* Scuttles (${getVal('tri_rec_scut')}) | Pallets (${getVal('tri_rec_pal')}) | Sacas (${getVal('tri_rec_sac')})\n`;
+        relatorio += `> *Triado:* Scuttles (${getVal('tri_feito_scut')}) | Pallets (${getVal('tri_feito_pal')}) | Sacas (${getVal('tri_feito_sac')})\n`;
+        relatorio += `> *Pendente p/ Próximo:* Scuttles (${getVal('tri_pend_scut')}) | Pallets (${getVal('tri_pend_pal')}) | Sacas (${getVal('tri_pend_sac')})\n\n`;
+
+        relatorio += `📝 *5. REQUISIÇÕES E TRANSFERÊNCIAS*\n`;
+        relatorio += `- Pendentes de Atender (Saída/Transf): ${getText('req_atender')}\n`;
+        relatorio += `- Pendentes de Receber (Entre SOCs): ${getText('req_receber')}\n\n`;
+
+        let obsAdmin = document.getElementById('org_admin_obs').value ? ` - ${document.getElementById('org_admin_obs').value}` : '';
+        let obsTri = document.getElementById('org_triagem_obs').value ? ` - ${document.getElementById('org_triagem_obs').value}` : '';
+
+        relatorio += `🧹 *6. ORGANIZAÇÃO E 5S*\n`;
+        relatorio += `- Administrativo: ${document.getElementById('org_admin_status').value}${obsAdmin}\n`;
+        relatorio += `- Área de Triagem: ${document.getElementById('org_triagem_status').value}${obsTri}\n`;
+        relatorio += `- Estoque Almoxarifado:\n  ${getText('org_estoque_almox').replace(/\n/g, '\n  ')}\n`;
+        relatorio += `- Estoque Fundo Galpão:\n  ${getText('org_estoque_fundo').replace(/\n/g, '\n  ')}\n`;
+
+        document.getElementById('finalText').value = relatorio;
+        document.getElementById('outputModal').style.display = 'flex';
+    }
+
+    function fecharModal() {
+        document.getElementById('outputModal').style.display = 'none';
+    }
+
+    async function copiarTexto() {
+        const text = document.getElementById('finalText').value;
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            }
+            alert("✅ Relatório copiado com sucesso! Agora é só colar no SeaTalk.");
+            fecharModal();
+        } catch (err) {
+            alert("Erro ao copiar. Por favor, selecione o texto manualmente.");
+        }
+    }
+</script>
+
+</body>
+</html>
