@@ -373,15 +373,115 @@
         let relatorio = `🔄 *TROCA DE TURNO - ALMOXARIFADO SP25* 🔄\n📅 Data: ${data} | ⏰ Turno: ${turno}\n👤 Almoxarife: ${almox}\n\n`;
 
         relatorio += `📦 *1. RECEBIMENTO*\n`;
-        relatorio += `- NFs: ${getText('rec_nfs')}\n`; relatorio += `- IDs: ${getText('rec_ids')}\n`;
-        relatorio += `- Quantidades: ${getText('rec_qtds')}\n\n`;  relatorio += `📋 *2. INVENTÁRIO*\n`; relatorio += `- Contagem: Diário (${getVal('inv_diario')}) | Semanal (${getVal('inv_semanal')}) \vert{} Mensal (${getVal('inv_mensal')})\n`;
+        relatorio += `- NFs: ${getText('rec_nfs')}\n`;
+        relatorio += `- IDs: ${getText('rec_ids')}\n`;
+        relatorio += `- Quantidades: ${getText('rec_qtds')}\n\n`;
+
+        relatorio += `📋 *2. INVENTÁRIO*\n`;
+        relatorio += `- Contagem: Diário (${getVal('inv_diario')}) | Semanal (${getVal('inv_semanal')}) | Mensal (${getVal('inv_mensal')})\n`;
         relatorio += `- Itens c/ Divergência: ${getVal('inv_div_qtd')}\n`;
-        relatorio += `- Pendentes 2ª Contagem: ${getVal('inv_pend_2')}\n`; relatorio += `- Pendentes 3ª Contagem: ${getVal('inv_pend_3')}\n`;
+        relatorio += `- Pendentes 2ª Contagem: ${getVal('inv_pend_2')}\n`;
+        relatorio += `- Pendentes 3ª Contagem: ${getVal('inv_pend_3')}\n`;
         relatorio += `- Detalhes/IDs Divergentes: ${getText('inv_detalhes')}\n\n`;
 
-        relatorio += `🚨 *3. ITENS CRÍTICOS (Físico às ${document.getElementById('crit_hora').value \vert{}\vert{} "Não inf."})\n`; relatorio += `- ID00218 (Scut. Nova): ${getVal('crit_sn')}\n`;
-        relatorio += `- RE00002 (Scut. Reuso): ${getVal('crit_sr')}\n`; relatorio += `- ID00219 (Pallet Novo): ${getVal('crit_pn')}\n`;
-        relatorio += `- RE00001 (Pallet Reuso): ${getVal('crit_pr')}\n`; relatorio += `- RE00003 (Saca Reuso): ${getVal('crit_sac')}\n`;
-        relatorio += `- ID00118 (Luva 7/P): ${getVal('crit_l7')}\n`; relatorio += `- ID00243 (Luva 8/M): ${getVal('crit_l8')}\n\n`;
+        relatorio += `🚨 *3. ITENS CRÍTICOS (Físico às ${document.getElementById('crit_hora').value || "Não inf."})\n`;
+        relatorio += `- ID00218 (Scut. Nova): ${getVal('crit_sn')}\n`;
+        relatorio += `- RE00002 (Scut. Reuso): ${getVal('crit_sr')}\n`;
+        relatorio += `- ID00219 (Pallet Novo): ${getVal('crit_pn')}\n`;
+        relatorio += `- RE00001 (Pallet Reuso): ${getVal('crit_pr')}\n`;
+        relatorio += `- RE00003 (Saca Reuso): ${getVal('crit_sac')}\n`;
+        relatorio += `- ID00118 (Luva 7/P): ${getVal('crit_l7')}\n`;
+        relatorio += `- ID00243 (Luva 8/M): ${getVal('crit_l8')}\n\n`;
 
-        relatorio += `♻️ *4. TRIAGEM (Movimentação)*\
+        relatorio += `♻️ *4. TRIAGEM (Movimentação)*\n`;
+        relatorio += `> *Recebido:* Scuttles (${getVal('tri_rec_scut')}) | Pallets (${getVal('tri_rec_pal')}) | Sacas (${getVal('tri_rec_sac')})\n`;
+        relatorio += `> *Triado:* Scuttles (${getVal('tri_feito_scut')}) | Pallets (${getVal('tri_feito_pal')}) | Sacas (${getVal('tri_feito_sac')})\n`;
+        relatorio += `> *Pendente p/ Próximo:* Scuttles (${getVal('tri_pend_scut')}) | Pallets (${getVal('tri_pend_pal')}) | Sacas (${getVal('tri_pend_sac')})\n\n`;
+
+        relatorio += `📝 *5. REQUISIÇÕES E TRANSFERÊNCIAS*\n`;
+        relatorio += `- Pendentes de Atender (Saída/Transf): ${getText('req_atender')}\n`;
+        relatorio += `- Pendentes de Receber (Entre SOCs): ${getText('req_receber')}\n\n`;
+
+        let obsAdmin = document.getElementById('org_admin_obs').value ? ` - ${document.getElementById('org_admin_obs').value}` : '';
+        let obsTri = document.getElementById('org_triagem_obs').value ? ` - ${document.getElementById('org_triagem_obs').value}` : '';
+
+        relatorio += `🧹 *6. ORGANIZAÇÃO E 5S*\n`;
+        relatorio += `- Administrativo: ${document.getElementById('org_admin_status').value}${obsAdmin}\n`;
+        relatorio += `- Área de Triagem: ${document.getElementById('org_triagem_status').value}${obsTri}\n`;
+        relatorio += `- Estoque Almoxarifado:\n  ${getText('org_estoque_almox').replace(/\n/g, '\n  ')}\n`;
+        relatorio += `- Estoque Fundo Galpão:\n  ${getText('org_estoque_fundo').replace(/\n/g, '\n  ')}\n`;
+
+        document.getElementById('finalText').value = relatorio;
+        document.getElementById('outputModal').style.display = 'flex';
+    }
+
+    function fecharModal() {
+        document.getElementById('outputModal').style.display = 'none';
+    }
+
+    async function copiarTexto() {
+        const text = document.getElementById('finalText').value;
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            }
+            alert("✅ Relatório copiado com sucesso! Agora é só colar no SeaTalk.");
+            fecharModal();
+        } catch (err) {
+            alert("Erro ao copiar. Por favor, selecione o texto manualmente.");
+        }
+    }
+
+    async function enviarWebhook() {
+        let url = document.getElementById('webhookUrl').value.trim();
+        const texto = document.getElementById('finalText').value;
+
+        if (!url) {
+            alert("⚠️ Cole a URL do Webhook do SeaTalk antes de enviar.");
+            return;
+        }
+
+        // Remove espaços acidentais que possam surgir ao copiar e colar
+        url = url.replace(/\s+/g, '');
+        localStorage.setItem('seatalk_webhook_url', url);
+
+        // Encaminha a chamada através de proxy seguro para contornar o CORS do navegador
+        const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(url);
+
+        const payload = {
+            tag: "text",
+            text: {
+                content: texto
+            }
+        };
+
+        try {
+            const response = await fetch(proxyUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert("✅ Relatório enviado com sucesso para o grupo do SeaTalk!");
+                fecharModal();
+            } else {
+                alert("❌ Erro ao enviar para o SeaTalk. Verifique se a URL do Webhook está correta.");
+            }
+        } catch (err) {
+            alert("❌ Falha na conexão ao enviar o Webhook: " + err.message);
+        }
+    }
+</script>
+
+</body>
+</html>
