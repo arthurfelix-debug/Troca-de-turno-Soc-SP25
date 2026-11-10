@@ -130,15 +130,18 @@
         .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
         
         #finalText {
-            width: 100%; height: 350px; padding: 15px; font-family: monospace; font-size: 14px;
+            width: 100%; height: 280px; padding: 15px; font-family: monospace; font-size: 14px;
             border: 1px solid #ccc; border-radius: 5px; background: #f8f9fa; resize: none; white-space: pre-wrap;
         }
 
-        .btn-copy {
-            background-color: var(--shopee-orange); color: white; border: none; padding: 12px;
-            font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 15px;
+        .btn-action {
+            color: white; border: none; padding: 12px;
+            font-size: 15px; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px;
         }
+        .btn-copy { background-color: var(--shopee-orange); }
         .btn-copy:hover { background-color: #d73a1c; }
+        .btn-send { background-color: var(--shopee-navy); }
+        .btn-send:hover { background-color: #0d274d; }
     </style>
 </head>
 <body>
@@ -317,7 +320,7 @@
     <button class="btn-generate" onclick="gerarRelatorio()">Gerar Relatório para SeaTalk</button>
 </div>
 
-<!-- Modal com o Resultado -->
+<!-- Modal com o Resultado e Webhook -->
 <div id="outputModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -325,13 +328,28 @@
             <button class="close-btn" onclick="fecharModal()">&times;</button>
         </div>
         <textarea id="finalText" readonly></textarea>
-        <button class="btn-copy" onclick="copiarTexto()">📋 Copiar para o SeaTalk</button>
+        
+        <div style="margin-top: 12px; text-align: left;">
+            <label style="font-size: 13px; font-weight: bold; color: #333;">URL do Webhook do SeaTalk:</label>
+            <input type="text" id="webhookUrl" placeholder="https://openapi.seatalk.io/webhook/group/..." style="width: 100%; margin-top: 4px; font-size: 13px;">
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="btn-action btn-copy" onclick="copiarTexto()" style="flex: 1;">📋 Copiar Texto</button>
+            <button class="btn-action btn-send" onclick="enviarWebhook()" style="flex: 1;">🚀 Enviar p/ SeaTalk</button>
+        </div>
     </div>
 </div>
 
 <script>
-    // Setar data de hoje ao carregar
-    document.getElementById('dataAtual').valueAsDate = new Date();
+    // Carregar data de hoje e Webhook guardado no navegador
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById('dataAtual').valueAsDate = new Date();
+        const savedUrl = localStorage.getItem('seatalk_webhook_url');
+        if (savedUrl) {
+            document.getElementById('webhookUrl').value = savedUrl;
+        }
+    });
 
     function getVal(id) {
         let val = document.getElementById(id).value.trim();
@@ -418,6 +436,44 @@
             fecharModal();
         } catch (err) {
             alert("Erro ao copiar. Por favor, selecione o texto manualmente.");
+        }
+    }
+
+    async function enviarWebhook() {
+        const url = document.getElementById('webhookUrl').value.trim();
+        const texto = document.getElementById('finalText').value;
+
+        if (!url) {
+            alert("⚠️ Cole a URL do Webhook do SeaTalk antes de enviar.");
+            return;
+        }
+
+        localStorage.setItem('seatalk_webhook_url', url);
+
+        const payload = {
+            tag: "text",
+            text: {
+                content: texto
+            }
+        };
+
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert("✅ Relatório enviado com sucesso para o grupo do SeaTalk!");
+                fecharModal();
+            } else {
+                alert("❌ Erro ao enviar para o SeaTalk. Verifique se a URL do Webhook está correta.");
+            }
+        } catch (err) {
+            alert("❌ Falha na conexão ao enviar o Webhook: " + err.message);
         }
     }
 </script>
